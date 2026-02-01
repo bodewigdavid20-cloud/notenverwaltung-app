@@ -1,0 +1,66 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build APK
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: ☕ Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+    
+    - name: 🐦 Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.19.0'
+        channel: 'stable'
+    
+    - name: 📦 Install dependencies
+      run: flutter pub get
+    
+    - name: 🔍 Analyze code
+      run: flutter analyze = true
+    
+    - name: 🔨 Build APK (Release)
+      run: flutter build apk --release --split-per-abi
+    
+    - name: 📤 Upload APK (arm64-v8a)
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-arm64-v8a-release
+        path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+    
+    - name: 📤 Upload APK (armeabi-v7a)
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-armeabi-v7a-release
+        path: build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+    
+    - name: 📤 Upload APK (x86_64)
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-x86_64-release
+        path: build/app/outputs/flutter-apk/app-x86_64-release.apk
+    
+    - name: 📊 Build summary
+      run: |
+        echo "## 🎉 Build erfolgreich!" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📱 APK-Dateien:" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        ls -lh build/app/outputs/flutter-apk/*.apk >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Die APK-Dateien kannst du unter 'Artifacts' herunterladen!" >> $GITHUB_STEP_SUMMARY
